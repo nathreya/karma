@@ -41,6 +41,6 @@ Icon
 *.tlog
 *.idb
 *.pdb
-*.vcxproj
 *.filters
 *.user
+*.exe
