@@ -1,6 +1,8 @@
 // cannot handle recursive macros
 // can handle most concatenations with number-suffixes
 // expression parser can handle most conditional preprocessor expressions
+// conditional preprocessor directive cannot handle multi-character literals (eg. '\0')
+// does not support preprocessor directives in macros
 
 #include "stdafx.h"
 #include "preprocess.h"
@@ -2104,7 +2106,7 @@ namespace __karma {
 							symbol_table.erase(symbol_table.begin() + index, symbol_table.begin() + index + 1);
 						else {}
 						if(source[savefl + 2].get_id() != token::NEW_LINE) {
-							warn(_file_name, _line_number, "Junk characters after the '#undef' preprocessor directive; ignoring.\nLine given here for reference:");
+							warn(_file_name, _line_number, "Warning: Junk characters after the '#undef' preprocessor directive; ignoring.\nLine given here for reference:");
 							cerr << '\n' << '\n' << '\t';
 							for(int i = savefl; i < source.size() && source[i].get_id() != token::NEW_LINE; i++) {
 								cerr << source[i].get_qualifier() << ' ';
@@ -2125,14 +2127,8 @@ namespace __karma {
 			}
 			return ret;
 		}
-	}
-}
-namespace __karma
-{
-	namespace __preprocess
-	{
-		string evaluate_basic_bool_expr(string res)
-		{
+
+		string evaluate_basic_bool_expr(string res) {
 			vector<token> result = lex(res);
 			for(int i = 0; i < result.size(); i++) {
 				if(result[i].get_id() == token::MINUS) {
@@ -2165,14 +2161,8 @@ namespace __karma
 			}
 			return result[0].get_qualifier();
 		}
-	}
-}
-namespace __karma
-{
-	namespace __preprocess
-	{
-		bool evaluate_preprocessor_conditional(string code, vector <pair<pair<string,string>,string>> symbol_table, int & line, string file, string dir)
-		{
+	
+		bool evaluate_preprocessor_conditional(string code, vector <pair<pair<string,string>,string>> symbol_table, int & line, string file, string dir) {
 			if(code.length() == 0) {
 				int savefl = 0;
 				msg(file,line,"Error: expected expression after conditional preprocessor directive '" + dir + ".'\nLine given here for reference:");

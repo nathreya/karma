@@ -25,7 +25,16 @@ using std::shared_ptr;
 
 namespace __karma {
 	namespace __parse {
-	
+
+		struct c_parser : public c_ast_node {
+			vector<shared_ptr<cpp_token>> token_list;
+			int pos;
+			shared_ptr<c_scope> global_scope;
+		};
+
+		shared_ptr<c_scope> init_global_c_scope();
+		bool init_c_parser(shared_ptr<c_parser> parser, vector<shared_ptr<cpp_token>> tokl);
+		shared_ptr<c_symbol> external_declaration();
 	}
 }
 

@@ -30,7 +30,7 @@ namespace __karma {
 
 		enum c_c_declaration_kind {
 			C_C_DECLARATION_DECLARATION = 0x0001, C_C_DECLARATION_FUNCTION_DEFINITION = 0x0002, C_C_DECLARATION_TYPEDEF = 0x0004,
-			C_C_DECLARATION_STRUCT_UNION_DECLARATION = 0x0008, C_C_DECLARATION_ENUM_DECLARATION = 0x0010, C_C_DECLARATION_EMPTY = 0x0020
+			C_C_DECLARATION_STRUCT_UNION_DECLARATION = 0x0008, C_C_DECLARATION_ENUM_DECLARATION = 0x0010, C_C_DECLARATION_UNKNOWN = 0x0020
 		};
 
 		struct c_ast_node {
@@ -39,7 +39,7 @@ namespace __karma {
 		};
 
 		struct c_c_declaration : public c_ast_node {
-			c_c_declaration_kind kind;
+			c_c_declaration_kind c_declaration_kind;
 		};
 
 		enum c_expression_kind {
@@ -47,11 +47,11 @@ namespace __karma {
 			EXPRESSION_BINARY_OPERATION = 0x0008, EXPRESSION_CAST = 0x0010, EXPRESSION_SIZEOF_TYPE = 0x0020, EXPRESSION_SIZEOF_EXPRESSION = 0x0040,
 			EXPRESSION_UNARY_OPERATION = 0x0080, EXPRESSION_COMPOUND_LITERAL = 0x0100, EXPRESSION_POSTFIX_OPERATION = 0x0200,
 			EXPRESSION_MEMBER_ACCESS = 0x0400, EXPRESSION_FUNCTION_CALL = 0x0800, EXPRESSION_ARRAY_SUBSCRIPT = 0x1000, EXPRESSION_CONSTANT = 0x2000,
-			EXPRESSION_IDENTIFIER = 0x4000, EXPRESSION_EMPTY = 0x8000
+			EXPRESSION_IDENTIFIER = 0x4000, EXPRESSION_UNKNOWN = 0x8000
 		};
 
 		struct c_expression : public c_ast_node {
-			c_expression_kind kind;
+			c_expression_kind expression_kind;
 		};
 
 		struct c_identifier : public c_expression {
@@ -65,7 +65,7 @@ namespace __karma {
 
 		struct c_constant : public c_expression {
 			shared_ptr <cpp_token> token;
-			c_constant_kind kind;
+			c_constant_kind constant_kind;
 		};
 
 		struct c_array_subscript : public c_expression {
@@ -85,7 +85,7 @@ namespace __karma {
 		struct c_member_access : public c_expression {
 			shared_ptr <c_expression> identifier_expression;
 			shared_ptr <c_expression> member_identifier;
-			c_member_access_kind kind;
+			c_member_access_kind member_access_kind;
 		};
 
 		enum c_postfix_operation_kind {
@@ -94,7 +94,7 @@ namespace __karma {
 
 		struct c_postfix_operation : public c_expression {
 			shared_ptr <c_expression> expression;
-			c_postfix_operation_kind kind;
+			c_postfix_operation_kind postfix_operation_kind;
 		};
 
 		enum c_compound_literal_comma_delimiter_present_kind {
@@ -104,7 +104,7 @@ namespace __karma {
 		struct c_compound_literal : public c_expression {
 			shared_ptr <c_type_name> type_name;
 			shared_ptr <c_initializer_list> initializer;
-			c_compound_literal_comma_delimiter_present_kind kind;
+			c_compound_literal_comma_delimiter_present_kind compound_literal_comma_delimiter_present_kind;
 		};
 
 		enum c_unary_operation_kind {
@@ -113,7 +113,7 @@ namespace __karma {
 		};
 
 		struct c_unary_operation : public c_expression {
-			c_unary_operation_kind kind;
+			c_unary_operation_kind unary_operation_kind;
 			shared_ptr <c_expression> expression;
 		};
 
@@ -139,7 +139,7 @@ namespace __karma {
 
 		struct c_binary_operation : public c_expression {
 			shared_ptr <c_expression> lhs;
-			c_binary_operation_kind kind;
+			c_binary_operation_kind binary_operation_kind;
 			shared_ptr <c_expression> rhs;
 		};
 
@@ -157,7 +157,7 @@ namespace __karma {
 
 		struct c_assignment_operation : public c_expression {
 			shared_ptr <c_expression> lhs;
-			c_assignment_operation_kind kind;
+			c_assignment_operation_kind assignment_operation_kind;
 			shared_ptr <c_expression> rhs;
 		};
 
@@ -169,11 +169,11 @@ namespace __karma {
 			DECLARATION_SPECIFIER_STORAGE_CLASS_SPECIFIER = 0x0001, DECLARATION_SPECIFIER_TYPE_SPECIFIER = 0x0002,
 			DECLARATION_SPECIFIER_TYPE_QUALIFIER = 0x0004, DECLARATION_SPECIFIER_FUNCTION_SPECIFIER = 0x0008,
 			DECLARATION_SPECIFIER_TYPE_SPECIFIER_STRUCT_UNION = 0x0010, DECLARATION_SPECIFIER_TYPE_SPECIFIER_ENUM = 0x0020,
-			DECLARATION_SPECIFIER_TYPE_ALIAS = 0x0040, DECLARATION_SPECIFIER_EMPTY = 0x0080
+			DECLARATION_SPECIFIER_TYPE_ALIAS = 0x0040, DECLARATION_SPECIFIER_UNKNOWN = 0x0080
 		};
 
 		struct c_declaration_specifier : public c_ast_node {
-			c_declaration_specifier_kind kind;
+			c_declaration_specifier_kind declaration_specifier_kind;
 		};
 
 		enum c_storage_struct_specifier_kind {
@@ -182,18 +182,18 @@ namespace __karma {
 		};
 
 		struct c_storage_struct_specifier : public c_declaration_specifier {
-			c_storage_struct_specifier_kind kind;
+			c_storage_struct_specifier_kind storage_struct_specifier_kind;
 		};
 
 		enum c_type_specifier_kind {
 			TYPE_SPECIFIER_VOID = 0x0001, TYPE_SPECIFIER_CHAR = 0x0002, TYPE_SPECIFIER_SHORT = 0x0004, TYPE_SPECIFIER_INT = 0x0008,
 			TYPE_SPECIFIER_LONG = 0x0010, TYPE_SPECIFIER_FLOAT = 0x0020, TYPE_SPECIFIER_DOUBLE = 0x0040, TYPE_SPECIFIER_SIGNED = 0x0080,
 			TYPE_SPECIFIER_UNSIGNED = 0x0100, TYPE_SPECIFIER__BOOL = 0x0200, TYPE_SPECIFIER__COMPLEX = 0x0400, TYPE_SPECIFIER__IMAGINARY = 0x0800,
-			TYPE_SPECIFIER_EMPTY = 0x1000
+			TYPE_SPECIFIER_UNKNOWN = 0x1000
 		};
 
 		struct c_type_specifier : public c_declaration_specifier {
-			c_type_specifier_kind kind;
+			c_type_specifier_kind type_specifier_kind;
 		};
 
 		struct c_type_alias : public c_declaration_specifier {
@@ -205,7 +205,7 @@ namespace __karma {
 		};
 
 		struct c_type_qualifier : public c_declaration_specifier {
-			c_type_qualifier_kind kind;
+			c_type_qualifier_kind type_qualifier_kind;
 		};
 
 		enum c_function_specifier_kind {
@@ -213,7 +213,7 @@ namespace __karma {
 		};
 
 		struct c_function_specifier : public c_declaration_specifier {
-			c_function_specifier_kind kind;
+			c_function_specifier_kind function_specifier_kind;
 		};
 
 		struct c_declarator;
@@ -238,9 +238,9 @@ namespace __karma {
 			shared_ptr <c_declarator> declarator;
 			shared_ptr <c_expression> identifier;
 			vector <shared_ptr<c_derived_declarator>> derived_declarator_list;
-			c_declarator_kind kind;
+			c_declarator_kind declarator_kind;
 			shared_ptr <c_expression> initialized;
-			c_type_completeness_kind kind2;
+			c_type_completeness_kind type_completeness_kind;
 		};
 
 		enum c_struct_union_specifier_kind {
@@ -254,7 +254,7 @@ namespace __karma {
 		struct c_struct_declaration;
 
 		struct c_struct_union_specifier : public c_declaration_specifier {
-			c_struct_union_specifier_kind kind;
+			c_struct_union_specifier_kind struct_union_specifier_kind;
 			shared_ptr <c_expression> identifier;
 			c_struct_union_specifier_declaration_list_present_kind present_kind;
 			vector <shared_ptr<c_c_declaration>> struct_declaration_list;
@@ -301,7 +301,7 @@ namespace __karma {
 		};
 
 		struct c_derived_declarator : public c_ast_node {
-			c_derived_declarator_kind kind;
+			c_derived_declarator_kind derived_declarator_kind;
 		};
 
 		struct c_pointer : public c_ast_node {
@@ -320,7 +320,7 @@ namespace __karma {
 		struct c_array_declarator : public c_derived_declarator {
 			vector <shared_ptr<c_declaration_specifier>> type_qualifier_list;
 			shared_ptr <c_array_size> array_size;
-			c_array_declarator_kind kind;
+			c_array_declarator_kind array_declarator_kind;
 		};
 
 		enum c_function_declarator_parameters_kind {
@@ -335,8 +335,8 @@ namespace __karma {
 		struct c_function_declarator : public c_derived_declarator {
 			vector <shared_ptr<c_c_declaration>> new_style_parameter_list;
 			vector <shared_ptr<c_expression>> old_style_parameter_list;
-			c_function_declarator_parameters_kind kind;
-			c_function_declarator_va_args_present_kind kind2;
+			c_function_declarator_parameters_kind function_declarator_parameters_kind;
+			c_function_declarator_va_args_present_kind function_declarator_va_args_present_kind;
 		};
 
 		struct c_array_size : public c_ast_node {
@@ -359,7 +359,7 @@ namespace __karma {
 		struct c_initializer : public c_ast_node {
 			shared_ptr <c_expression> expression;
 			shared_ptr <c_initializer_list> initializer_list;
-			c_initializer_comma_delimeter_present_kind kind;
+			c_initializer_comma_delimeter_present_kind initializer_comma_delimiter_present_kind;
 		};
 
 		struct c_initializer_list {
@@ -377,19 +377,19 @@ namespace __karma {
 		struct c_designator : public c_ast_node {
 			shared_ptr <c_expression> expression;
 			shared_ptr <c_expression> identifier;
-			c_designator_kind kind;
+			c_designator_kind designator_kind;
 		};
 
 		enum c_statement_kind {
 			STATEMENT_LABEL = 0x0001, STATEMENT_CASE = 0x0002, STATEMENT_DEFAULT = 0x0004, STATEMENT_EXPRESSION = 0x0008, STATEMENT_COMPOUND = 0x0010,
 			STATEMENT_SWITCH = 0x0020, STATEMENT_IF = 0x0040, STATEMENT_WHILE = 0x0080, STATEMENT_FOR = 0x0100, STATEMENT_GOTO = 0x0200,
-			STATEMENT_CONTINUE = 0x0400, STATEMENT_BREAK = 0x0800, STATEMENT_RETURN = 0x1000, STATEMENT_EMPTY = 0x2000
+			STATEMENT_CONTINUE = 0x0400, STATEMENT_BREAK = 0x0800, STATEMENT_RETURN = 0x1000, STATEMENT_UNKNOWN = 0x2000
 		};
 
 		struct c_block_item;
 
 		struct c_statement : public c_ast_node {
-			c_statement_kind kind;
+			c_statement_kind statement_kind;
 			int position;
 		};
 
@@ -420,7 +420,7 @@ namespace __karma {
 		};
 
 		struct c_if : public c_statement {
-			c_if_kind kind;
+			c_if_kind if_kind;
 			shared_ptr <c_expression> expression;
 			shared_ptr <c_block_item> block_item1;
 			shared_ptr <c_block_item> block_item2;
@@ -436,7 +436,7 @@ namespace __karma {
 		};
 
 		struct c_while : public c_statement {
-			c_while_kind kind;
+			c_while_kind while_kind;
 			shared_ptr <c_expression> expression;
 			shared_ptr <c_block_item> statement;
 		};
@@ -446,7 +446,7 @@ namespace __karma {
 		};
 
 		struct c_for : public c_statement {
-			c_for_initialization_kind kind;
+			c_for_initialization_kind for_initialization_kind;
 			shared_ptr <c_expression> expression;
 			shared_ptr <c_c_declaration> declaration;
 			shared_ptr <c_expression> expression2;
@@ -469,11 +469,11 @@ namespace __karma {
 		};
 
 		enum c_block_item_kind {
-			BLOCK_ITEM_STATEMENT = 0x0001, BLOCK_ITEM_DECLARATION = 0x0002, BLOCK_ITEM_EMPTY = 0x0004
+			BLOCK_ITEM_STATEMENT = 0x0001, BLOCK_ITEM_DECLARATION = 0x0002, BLOCK_ITEM_UNKNOWN = 0x0004
 		};
 
 		struct c_block_item : public c_ast_node {
-			c_block_item_kind kind;
+			c_block_item_kind block_item_kind;
 			shared_ptr <c_statement> statement;
 			shared_ptr <c_c_declaration> declaration;
 		};
@@ -495,14 +495,15 @@ namespace __karma {
 
 		enum c_scope_kind {
 			SCOPE_FUNCTION = 0x0001, SCOPE_LOOP = 0x0002, SCOPE_CONDITIONAL = 0x0004, SCOPE_SWITCH = 0x0008, SCOPE_STRUCT_UNION = 0x0010,
-			SCOPE_EMPTY = 0x0020
+			SCOPE_GLOBAL = 0x0020, SCOPE_UNKNOWN = 0x0040
 		};
 
 		struct c_scope;
+		enum c_type_kind;
 
 		enum c_symbol_kind {
 			C_SYMBOL_DECLARATION = 0x0001, C_SYMBOL_FUNCTION_DEFINITION = 0x0002, C_SYMBOL_STRUCT_UNION = 0x0004, C_SYMBOL_ENUM = 0x0008,
-			C_SYMBOL_TYPEDEF = 0x0010, C_SYMBOL_EMPTY = 0x0020
+			C_SYMBOL_TYPEDEF = 0x0010, C_SYMBOL_UNKNOWN = 0x0020
 		};
 
 		enum c_declaration_type_kind {
@@ -510,15 +511,16 @@ namespace __karma {
 		};
 
 		struct c_symbol : public c_ast_node {
+			c_symbol_kind symbol_kind;
 		};
 
 		struct c_declaration_symbol : public c_symbol {
 			vector <shared_ptr<c_declaration_specifier>> declaration_specifier_list;
 			shared_ptr <cpp_token> identifier;
-			c_type_completeness_kind type_kind;
+			c_type_completeness_kind type_completeness_kind;
 			vector <shared_ptr<c_derived_declarator>> derived_declarator_list;
 			shared_ptr <c_c_declaration> source_declaration;
-			c_c_declaration_kind declaration_kind;
+			c_type_kind type_kind;
 		};
 
 		struct c_function_definition_symbol : public c_symbol {
@@ -527,6 +529,7 @@ namespace __karma {
 			vector <shared_ptr<c_derived_declarator>> derived_declarator_list;
 			vector <shared_ptr<c_symbol>> parameters;
 			shared_ptr <c_statement> function_body;
+			c_type_kind type_kind;
 		};
 
 		struct c_struct_union_symbol : public c_symbol {
@@ -538,6 +541,7 @@ namespace __karma {
 		};
 
 		struct c_enum_symbol : public c_symbol {
+			vector<shared_ptr<c_declaration_specifier>> declaration_specifier_list;
 			shared_ptr <cpp_token> identifier;
 			vector <shared_ptr<cpp_token>> identifier_list;
 			vector <shared_ptr<c_expression>> expression_list;
@@ -556,7 +560,11 @@ namespace __karma {
 		};
 
 		enum c_type_kind {
-							
+				TYPE_KIND_VOID = 0x0001, TYPE_KIND_CHAR = 0x0002, TYPE_KIND_SIGNED_CHAR = 0x0004, TYPE_KIND_UNSIGNED_CHAR = 0x0008, TYPE_KIND_SIGNED_SHORT = 0x0010,
+				TYPE_KIND_UNSIGNED_SHORT = 0x0020, TYPE_KIND_SIGNED_INT = 0x0040, TYPE_KIND_UNSIGNED_INT = 0x0080, TYPE_KIND_SIGNED_LONG = 0x0100, TYPE_KIND_UNSIGNED_LONG = 0x0200,
+				TYPE_KIND_SIGNED_LONG_LONG = 0x0400, TYPE_KIND_UNSIGNED_LONG_LONG = 0x0800, TYPE_KIND_FLOAT = 0x1000, TYPE_KIND_DOUBLE = 0x2000, TYPE_KIND_LONG_DOUBLE = 0x4000, 
+				TYPE_KIND__BOOL = 0x8000, TYPE_KIND_FLOAT__COMPLEX = 0x10000, TYPE_KIND_DOUBLE__COMPLEX = 0x20000, TYPE_KIND_LONG_DOUBLE__COMPLEX = 0x40000, TYPE_KIND_STRUCT_UNION_SPECIFIER = 0x80000,
+				TYPE_KIND_ENUM_SPECIFIER = 0x100000, TYPE_KIND_TYPEDEF_NAME = 0x200000
 		};
 	}
 }
