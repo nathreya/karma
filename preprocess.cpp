@@ -2074,6 +2074,7 @@ namespace __karma {
 						}
 						cerr << '\n' << '\n' << '\t';
 						caret(_hundef.length() + 1);
+						cerr << '\n';
 						bool o = true;
 						i += 2;
 						while(source[i].get_id() != token::NEW_LINE && i != source.size()) {
@@ -2086,6 +2087,7 @@ namespace __karma {
 								cerr << '\n' << '\n' << '\t';
 								caret(_hundef.length() + 1);
 								o = false;
+								cerr << '\n';
 							}
 							i++;
 						}
@@ -2113,6 +2115,7 @@ namespace __karma {
 							}
 							cerr << '\n' << '\n' << '\t';
 							caret(_hundef.length() + 1 + source[savefl + 1].get_qualifier().length() + 1);
+							cerr << '\n';
 						}
 						while(source[i].get_id() != token::NEW_LINE && i < source.size()) {
 							source.erase(source.begin() + i, source.begin() + i + 1);
@@ -2170,6 +2173,7 @@ namespace __karma {
 				cerr << dir << ' ';
 				cerr << '\n' << '\n' << '\t';
 				caret(dir.length() - 1);
+				cerr << '\n';
 				line = -1;
 				return false;
 			}
@@ -2205,6 +2209,7 @@ namespace __karma {
 				cerr << dir << ' ' << code;
 				cerr << '\n' << '\n' << '\t';
 				caret(dir.length() + 1 + code.length() - 2);
+				cerr << '\n';
 				line = -1;
 				return false;
 			}
@@ -2214,6 +2219,7 @@ namespace __karma {
 				cerr << dir << ' ' << code;
 				cerr << '\n' << '\n' << '\t';
 				caret(dir.length() + 1);
+				cerr << '\n';
 				line = -1;
 				return false;
 			}
@@ -2297,6 +2303,7 @@ namespace __karma {
 					cerr << dir << ' ' << code;
 					cerr << '\n' << '\n' << '\t';
 					caret(dir.length() + 1);
+					cerr << '\n';
 				}
 				line = -1;
 				return false;

@@ -34,6 +34,8 @@ namespace __karma {
 		};
 
 		struct c_ast_node {
+			int source_begin_pos;
+			int source_end_pos;
 			bool complete_node;
 			bool error_node;
 		};
@@ -263,7 +265,7 @@ namespace __karma {
 			bool referred;
 		};
 
-		struct c_struct_declaration : public c_c_declaration {
+		struct c_struct_declaration : public c_ast_node {
 			vector <shared_ptr<c_declaration_specifier>> specifier_qualifier_list;
 			vector <pair<shared_ptr<c_declarator>, shared_ptr<c_expression>> > struct_declarator_list;
 		};
@@ -566,6 +568,14 @@ namespace __karma {
 				TYPE_KIND__BOOL = 0x8000, TYPE_KIND_FLOAT__COMPLEX = 0x10000, TYPE_KIND_DOUBLE__COMPLEX = 0x20000, TYPE_KIND_LONG_DOUBLE__COMPLEX = 0x40000, TYPE_KIND_STRUCT_UNION_SPECIFIER = 0x80000,
 				TYPE_KIND_ENUM_SPECIFIER = 0x100000, TYPE_KIND_TYPEDEF_NAME = 0x200000
 		};
+
+		struct c_parser : public c_ast_node {
+			vector<shared_ptr<cpp_token>> token_list;
+			int pos;
+			shared_ptr<c_scope> global_scope;
+		};
+
+		const int parser_unset_source_pos = -1;
 	}
 }
 
