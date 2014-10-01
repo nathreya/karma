@@ -500,65 +500,10 @@ namespace __karma {
 			SCOPE_GLOBAL = 0x0020, SCOPE_UNKNOWN = 0x0040
 		};
 
-		struct c_scope;
-		enum c_type_kind;
-
-		enum c_symbol_kind {
-			C_SYMBOL_DECLARATION = 0x0001, C_SYMBOL_FUNCTION_DEFINITION = 0x0002, C_SYMBOL_STRUCT_UNION = 0x0004, C_SYMBOL_ENUM = 0x0008,
-			C_SYMBOL_TYPEDEF = 0x0010, C_SYMBOL_UNKNOWN = 0x0020
-		};
-
-		enum c_declaration_type_kind {
-			C_DECLARATION_TYPE_DECLARED = 0x0001, C_DECLARATION_TYPE_REFERRED = 0x0002
-		};
-
-		struct c_symbol : public c_ast_node {
-			c_symbol_kind symbol_kind;
-		};
-
-		struct c_declaration_symbol : public c_symbol {
-			vector <shared_ptr<c_declaration_specifier>> declaration_specifier_list;
-			shared_ptr <cpp_token> identifier;
-			c_type_completeness_kind type_completeness_kind;
-			vector <shared_ptr<c_derived_declarator>> derived_declarator_list;
-			shared_ptr <c_c_declaration> source_declaration;
-			c_type_kind type_kind;
-		};
-
-		struct c_function_definition_symbol : public c_symbol {
-			vector <shared_ptr<c_declaration_specifier>> declaration_specifier_list;
-			shared_ptr <cpp_token> identifier;
-			vector <shared_ptr<c_derived_declarator>> derived_declarator_list;
-			vector <shared_ptr<c_symbol>> parameters;
-			shared_ptr <c_statement> function_body;
-			c_type_kind type_kind;
-		};
-
-		struct c_struct_union_symbol : public c_symbol {
-			vector <shared_ptr<c_declaration_specifier>> declaration_specifier_list;
-			c_struct_union_specifier_kind struct_union_specifier_kind;
-			shared_ptr <c_scope> struct_union_scope;
-			shared_ptr <cpp_token> identifier;
-			c_struct_union_specifier_declaration_list_present_kind struct_union_specifier_declaration_list_present_kind;
-		};
-
-		struct c_enum_symbol : public c_symbol {
-			vector<shared_ptr<c_declaration_specifier>> declaration_specifier_list;
-			shared_ptr <cpp_token> identifier;
-			vector <shared_ptr<cpp_token>> identifier_list;
-			vector <shared_ptr<c_expression>> expression_list;
-			c_enum_specifier_comma_delimiter_present_kind enum_specifier_comma_delimiter_present_kind;
-			c_enum_specifier_enumeration_list_present_kind enum_specifier_enumeration_list_present_kind;
-		};
-
-		struct c_typedef_symbol : public c_symbol {
-			shared_ptr <c_symbol> declaration_symbol;
-		};
-
 		struct c_scope : public c_ast_node {
-			c_scope_kind scope_kind;
-			vector <shared_ptr<c_symbol>> declaration_list;
-			shared_ptr <c_scope> parent_scope;
+			vector<c_scope_kind> scope_kind_list;
+			vector <shared_ptr<c_c_declaration>> declaration_list;
+			vector<int> scope_separators;
 		};
 
 		enum c_type_kind {
@@ -566,12 +511,13 @@ namespace __karma {
 				TYPE_KIND_UNSIGNED_SHORT = 0x0020, TYPE_KIND_SIGNED_INT = 0x0040, TYPE_KIND_UNSIGNED_INT = 0x0080, TYPE_KIND_SIGNED_LONG = 0x0100, TYPE_KIND_UNSIGNED_LONG = 0x0200,
 				TYPE_KIND_SIGNED_LONG_LONG = 0x0400, TYPE_KIND_UNSIGNED_LONG_LONG = 0x0800, TYPE_KIND_FLOAT = 0x1000, TYPE_KIND_DOUBLE = 0x2000, TYPE_KIND_LONG_DOUBLE = 0x4000, 
 				TYPE_KIND__BOOL = 0x8000, TYPE_KIND_FLOAT__COMPLEX = 0x10000, TYPE_KIND_DOUBLE__COMPLEX = 0x20000, TYPE_KIND_LONG_DOUBLE__COMPLEX = 0x40000, TYPE_KIND_STRUCT_UNION_SPECIFIER = 0x80000,
-				TYPE_KIND_ENUM_SPECIFIER = 0x100000, TYPE_KIND_TYPEDEF_NAME = 0x200000
+				TYPE_KIND_ENUM_SPECIFIER = 0x100000, TYPE_KIND_TYPEDEF = 0x200000, TYPE_KIND_UNKNOWN = 0x400000
 		};
 
 		struct c_parser : public c_ast_node {
 			vector<shared_ptr<cpp_token>> token_list;
 			int pos;
+			int temporary_pos; //this is used to store the beginning position of an external_declaration for diagnostics
 			shared_ptr<c_scope> global_scope;
 		};
 

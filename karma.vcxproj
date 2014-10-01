@@ -130,6 +130,7 @@
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
     <ClInclude Include="token.h" />
+    <ClInclude Include="traverse_c_ast.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="cpp_token.cpp" />
@@ -150,6 +151,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Regular|Win32'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="token.cpp" />
+    <ClCompile Include="traverse_c_ast.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

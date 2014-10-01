@@ -8,6 +8,7 @@
 #include "expr.h"
 #include "cpp_token.h"
 #include "semantics.h"
+#include "traverse_c_ast.h"
 #include <memory>
 #include <iostream>
 #include <string>
@@ -28,12 +29,18 @@ using std::shared_ptr;
 
 namespace __karma {
 	namespace __parse {
-		shared_ptr<c_scope> init_global_c_scope();
+		
+		extern string const semicolon_missing_error_message;
+		extern string const declarator_missing_error_message;
+
 		bool init_c_parser(shared_ptr<c_parser> parser, vector<shared_ptr<cpp_token>> tokl);
-		shared_ptr<c_symbol> parse_external_declaration(shared_ptr<c_parser> parser);
+		shared_ptr<c_c_declaration> parse_external_declaration(shared_ptr<c_parser> parser);
 		shared_ptr<c_c_declaration> parse_declaration(shared_ptr<c_parser> parser);
 		shared_ptr<c_c_declaration> parse_function_definition(shared_ptr<c_parser> parser);
 		shared_ptr<c_c_declaration> parse_declaration_or_function_definition(shared_ptr<c_parser> parser);
+		vector<shared_ptr<c_declaration_specifier>> parse_declaration_specifier_list(shared_ptr<c_parser> parser);
+		vector<shared_ptr<c_declarator>> parse_declarator_list(shared_ptr<c_parser> parser);
+		shared_ptr<c_declarator> parse_declarator(shared_ptr<c_parser> parser);
 	}
 }
 
