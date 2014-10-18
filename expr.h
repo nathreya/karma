@@ -33,7 +33,7 @@ namespace __karma {
 
 		class expr {
 			private:
-				char * pExpresion;
+				char * pExpression;
 				char(token) [80];
 				char tokenType;
 				void recursive_3(int & culmination);

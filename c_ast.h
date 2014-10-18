@@ -49,7 +49,7 @@ namespace __karma {
 			EXPRESSION_BINARY_OPERATION = 0x0008, EXPRESSION_CAST = 0x0010, EXPRESSION_SIZEOF_TYPE = 0x0020, EXPRESSION_SIZEOF_EXPRESSION = 0x0040,
 			EXPRESSION_UNARY_OPERATION = 0x0080, EXPRESSION_COMPOUND_LITERAL = 0x0100, EXPRESSION_POSTFIX_OPERATION = 0x0200,
 			EXPRESSION_MEMBER_ACCESS = 0x0400, EXPRESSION_FUNCTION_CALL = 0x0800, EXPRESSION_ARRAY_SUBSCRIPT = 0x1000, EXPRESSION_CONSTANT = 0x2000,
-			EXPRESSION_IDENTIFIER = 0x4000, EXPRESSION_UNKNOWN = 0x8000
+			EXPRESSION_IDENTIFIER = 0x4000, EXPRESSION_INITIALIZER = 0x8000, EXPRESSION_UNKNOWN = 0x10000
 		};
 
 		struct c_expression : public c_ast_node {
@@ -178,20 +178,19 @@ namespace __karma {
 			c_declaration_specifier_kind declaration_specifier_kind;
 		};
 
-		enum c_storage_struct_specifier_kind {
-			STORAGE_struct_SPECIFIER_EXTERN = 0x0001, STORAGE_struct_SPECIFIER_STATIC = 0x0002, STORAGE_struct_SPECIFIER_AUTO = 0x0004,
-			STORAGE_struct_SPECIFIER_REGISTER = 0x0008
+		enum c_storage_class_specifier_kind {
+			STORAGE_CLASS_SPECIFIER_EXTERN = 0x0001, STORAGE_CLASS_SPECIFIER_STATIC = 0x0002, STORAGE_CLASS_SPECIFIER_AUTO = 0x0004,
+			STORAGE_CLASS_SPECIFIER_REGISTER = 0x0008, STORAGE_CLASS_SPECIFIER_TYPEDEF = 0x0010
 		};
 
-		struct c_storage_struct_specifier : public c_declaration_specifier {
-			c_storage_struct_specifier_kind storage_struct_specifier_kind;
+		struct c_storage_class_specifier : public c_declaration_specifier {
+			c_storage_class_specifier_kind storage_class_specifier_kind;
 		};
 
 		enum c_type_specifier_kind {
 			TYPE_SPECIFIER_VOID = 0x0001, TYPE_SPECIFIER_CHAR = 0x0002, TYPE_SPECIFIER_SHORT = 0x0004, TYPE_SPECIFIER_INT = 0x0008,
 			TYPE_SPECIFIER_LONG = 0x0010, TYPE_SPECIFIER_FLOAT = 0x0020, TYPE_SPECIFIER_DOUBLE = 0x0040, TYPE_SPECIFIER_SIGNED = 0x0080,
-			TYPE_SPECIFIER_UNSIGNED = 0x0100, TYPE_SPECIFIER__BOOL = 0x0200, TYPE_SPECIFIER__COMPLEX = 0x0400, TYPE_SPECIFIER__IMAGINARY = 0x0800,
-			TYPE_SPECIFIER_UNKNOWN = 0x1000
+			TYPE_SPECIFIER_UNSIGNED = 0x0100, TYPE_SPECIFIER__BOOL = 0x0200, TYPE_SPECIFIER__COMPLEX = 0x0400, TYPE_SPECIFIER__IMAGINARY = 0x0800
 		};
 
 		struct c_type_specifier : public c_declaration_specifier {
@@ -199,7 +198,7 @@ namespace __karma {
 		};
 
 		struct c_type_alias : public c_declaration_specifier {
-			shared_ptr <cpp_token> identifier;
+			shared_ptr <c_expression> identifer;
 		};
 
 		enum c_type_qualifier_kind {
@@ -228,21 +227,21 @@ namespace __karma {
 		struct c_derived_declarator;
 
 		enum c_declarator_kind {
-			DECLARATOR_DECLARATOR = 0x0001, DECLARATOR_IDENTIFIER = 0x0002, DECLARATOR_UNNAMED = 0x0004
+			DECLARATOR_DECLARATOR = 0x0001, DECLARATOR_IDENTIFIER = 0x0002, DECLARATOR_ABSTRACT = 0x0004, DECLARATOR_UNKNOWN = 0x0008
 		};
 
-		enum c_type_completeness_kind {
-			TYPE_COMPLETENESS_INCOMPLETE = 0x0001, TYPE_COMPLETENESS_COMPLETE = 0x0002, TYPE_COMPLETENESS_UNKOWN = 0x0004
+		enum c_declarator_type_kind {
+			DECLARATOR_TYPE_DIRECT = 0x0001, DECLARATOR_TYPE_ABSTRACT = 0x0002, DECLARATOR_TYPE_UNKNOWN = 0x0004
 		};
 
 		struct c_declarator : public c_ast_node {
-			shared_ptr <c_derived_declarator> pointer;
+			shared_ptr <c_derived_declarator> pointer_declarator;
 			shared_ptr <c_declarator> declarator;
 			shared_ptr <c_expression> identifier;
 			vector <shared_ptr<c_derived_declarator>> derived_declarator_list;
 			c_declarator_kind declarator_kind;
 			shared_ptr <c_expression> initialized;
-			c_type_completeness_kind type_completeness_kind;
+			c_declarator_type_kind declarator_type_kind;
 		};
 
 		enum c_struct_union_specifier_kind {
@@ -259,10 +258,7 @@ namespace __karma {
 			c_struct_union_specifier_kind struct_union_specifier_kind;
 			shared_ptr <c_expression> identifier;
 			c_struct_union_specifier_declaration_list_present_kind present_kind;
-			vector <shared_ptr<c_c_declaration>> struct_declaration_list;
-			bool defined;
-			bool declared;
-			bool referred;
+			vector <shared_ptr<c_struct_declaration>> struct_declaration_list;
 		};
 
 		struct c_struct_declaration : public c_ast_node {
@@ -285,9 +281,6 @@ namespace __karma {
 			c_enum_specifier_comma_delimiter_present_kind delimiter_kind;
 			c_enum_specifier_enumeration_list_present_kind present_kind;
 			vector <shared_ptr<c_enumerator>> enumerator_list;
-			bool defined;
-			bool declared;
-			bool referred;
 		};
 
 		struct c_enumerator : public c_ast_node {
@@ -336,7 +329,7 @@ namespace __karma {
 
 		struct c_function_declarator : public c_derived_declarator {
 			vector <shared_ptr<c_c_declaration>> new_style_parameter_list;
-			vector <shared_ptr<c_expression>> old_style_parameter_list;
+			vector <shared_ptr<c_expression>> old_style_parameter_list; //unsupported, so always null
 			c_function_declarator_parameters_kind function_declarator_parameters_kind;
 			c_function_declarator_va_args_present_kind function_declarator_va_args_present_kind;
 		};
@@ -358,7 +351,7 @@ namespace __karma {
 
 		struct c_designator;
 
-		struct c_initializer : public c_ast_node {
+		struct c_initializer : public c_expression {
 			shared_ptr <c_expression> expression;
 			shared_ptr <c_initializer_list> initializer_list;
 			c_initializer_comma_delimeter_present_kind initializer_comma_delimiter_present_kind;
@@ -491,13 +484,9 @@ namespace __karma {
 			vector <shared_ptr<c_c_declaration>> C_declaration_list;
 		};
 
-		struct c_typedef : public c_c_declaration {
-			shared_ptr <c_c_declaration> typedef_declaration;
-		};
-
 		enum c_scope_kind {
 			SCOPE_FUNCTION = 0x0001, SCOPE_LOOP = 0x0002, SCOPE_CONDITIONAL = 0x0004, SCOPE_SWITCH = 0x0008, SCOPE_STRUCT_UNION = 0x0010,
-			SCOPE_GLOBAL = 0x0020, SCOPE_UNKNOWN = 0x0040
+			SCOPE_GLOBAL = 0x0020, SCOPE_ENUM = 0x0040
 		};
 
 		struct c_scope : public c_ast_node {
@@ -522,6 +511,14 @@ namespace __karma {
 		};
 
 		const int parser_unset_source_pos = -1;
+
+		enum c_precedence_level {
+			PRECEDENCE_LEVEL_COMMA = 0x0001, PRECEDENCE_LEVEL_ASSIGNMENT = 0x0002, PRECEDENCE_LEVEL_CONDITIONAL = 0x0004,
+			PRECEDENCE_LEVEL_OR = 0x0008, PRECEDENCE_LEVEL_AND = 0x0010, PRECEDENCE_LEVEL_INCLUSIVE_OR = 0x0020,
+			PRECEDENCE_LEVEL_EXCLUSIVE_OR = 0x0040, PRECEDENCE_LEVEL_SINGLE_AND = 0x0080,
+			PRECEDENCE_LEVEL_EQUALITY = 0x0100, PRECEDENCE_LEVEL_RELATIONAL = 0x0200, PRECEDENCE_LEVEL_SHIFT = 0x0400,
+			PRECEDENCE_LEVEL_ADDITIVE = 0x0800, PRECDENCE_LEVEL_MULTIPLICATIVE = 0x1000, PRECEDENCE_LEVEL_UNKNOWN = 0x2000
+		};
 	}
 }
 

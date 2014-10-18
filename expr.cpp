@@ -10,7 +10,7 @@ namespace __karma {
 			: line(l), file(f), dir(d), ecounter(0) {}
 
 		void expr::set_expr(string e) {
-			pExpresion =
+			pExpression =
 #ifdef WIN32
 				_strdup(e.c_str());
 #else
@@ -190,7 +190,7 @@ namespace __karma {
 				"Error: no expression present in the conditional preprocessor directive '" + dir + ".'",
 			};
 			ecounter++;
-			pExpresion = "";
+			pExpression = "";
 			return;
 		}
 
@@ -199,14 +199,14 @@ namespace __karma {
 			tokenType = 0;
 			bucket = token;
 			*bucket = '\0';
-			if(!*pExpresion) return;
-			while(isspace(*pExpresion)) ++pExpresion;
-			if(strchr("+-~*/%^&|()<>", *pExpresion)) {
+			if(!*pExpression) return;
+			while(isspace(*pExpression)) ++pExpression;
+			if(strchr("+-~*/%^&|()<>", *pExpression)) {
 				tokenType = DELIMITER;
-				*bucket++ = *pExpresion++;
+				*bucket++ = *pExpression++;
 			}
-			else if(isdigit(*pExpresion)) {
-				while(!isdelim(*pExpresion)) *bucket++ = *pExpresion++;
+			else if(isdigit(*pExpression)) {
+				while(!isdelim(*pExpression)) *bucket++ = *pExpression++;
 				tokenType = NUMBER;
 			}
 			*bucket = '\0';

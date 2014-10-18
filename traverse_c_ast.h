@@ -17,7 +17,7 @@ using namespace __karma::__util;
 
 namespace __karma {
 	namespace __ast {
-
+		vector<shared_ptr<c_expression>> query_identifier(shared_ptr<c_c_declaration> decl);
 	}
 }
 
