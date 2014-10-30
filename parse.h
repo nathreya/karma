@@ -50,10 +50,6 @@ namespace __karma {
 		extern string const expected_an_expression_after_a_comma_error_message;
 		extern string const expected_colon_for_ternary_expression_error_message;
 
-		enum c_parenthesis_parse_option {
-			C_PARENTHESIS_PARSE_EXPRESSION = 0x0001, C_PARENTHESIS_PARSE_COMPOUND_LITERAL = 0x0002, C_PARENTHESIS_PARSE_CAST = 0x0004
-		};
-
 		extern shared_ptr<c_scope> global_typedef_scope;
 
 		void parser_assert(char* message, char* file, int line);
@@ -77,17 +73,21 @@ namespace __karma {
 		
 		//supports [] and ['expression']
 		shared_ptr<c_derived_declarator> parse_array_declarator(shared_ptr<c_parser> parser);
-		shared_ptr<c_expression> parse_expression(shared_ptr<c_parser> parser);
+		shared_ptr<c_expression> parse_expression(shared_ptr<c_parser> parser, c_type_cast_state type_cast_state);
 		shared_ptr<c_derived_declarator> parse_parameter_list(shared_ptr<c_parser> parser);
 		shared_ptr<c_declaration_specifier> parse_struct_union_specifier(shared_ptr<c_parser> parser);
 		shared_ptr<c_declaration_specifier> parse_enum_specifier(shared_ptr<c_parser> parser);
 		shared_ptr<c_enum_specifier> parse_enum_specifier_body(shared_ptr<c_parser> parser, shared_ptr<c_enum_specifier> espec, shared_ptr<c_expression> ident);
-		shared_ptr<c_expression> parse_constant_expression(shared_ptr<c_parser> parser);
+		shared_ptr<c_expression> parse_constant_expression(shared_ptr<c_parser> parser, c_type_cast_state type_cast_state);
 		vector<shared_ptr<c_declaration_specifier>> parse_specifier_qualifier_list(shared_ptr<c_parser> parser, bool check_one_specifier_qualifier);
 		shared_ptr<c_struct_union_specifier> parse_struct_union_specifier_body(shared_ptr<c_parser> parser, shared_ptr<c_struct_union_specifier> suspec, shared_ptr<c_expression> ident, c_struct_union_specifier_kind sukind);
 		shared_ptr<c_struct_declaration> parse_struct_declaration(shared_ptr<c_parser> parser);
 		shared_ptr<c_expression> parse_initializer(shared_ptr<c_parser> parser);
-		shared_ptr<c_expression> parse_cast_unary_postfix_primary_expression(shared_ptr<c_parser> parser, bool unary_expression);
+		shared_ptr<c_expression> parse_rhs_binary_expression(shared_ptr<c_parser> parser, shared_ptr<c_expression> lhs, c_precedence_level prec_level);
+		shared_ptr<c_expression> parse_cast_unary_postfix_primary_expression(shared_ptr<c_parser> parser, bool unary_expression, c_type_cast_state type_cast_state);
+		shared_ptr<c_expression> parse_assignment_expression(shared_ptr<c_parser> parser, c_type_cast_state type_cast_state);
+		shared_ptr<c_expression> parse_cast_unary_postfix_primary_expression2(shared_ptr<c_parser> parser, bool unary_expression, bool& cast_expression, c_type_cast_state type_cast_state);
+		shared_ptr<c_expression> parse_parenthesized_expression(shared_ptr<c_parser> parser);
 	}
 }
 

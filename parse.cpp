@@ -26,6 +26,7 @@ namespace __karma {
 		string const expected_a_comma_to_separate_struct_declarators_error_message = "Error: expected a comma to separate struct-declarator's.\nRegion given here for reference:";
 		string const expected_an_expression_after_a_comma_error_message = "Error: expected an expression after a comma.\nRegion given here for reference:";
 		string const expected_colon_for_ternary_expression_error_message = "Error: expected a colon for a ternary expression.\nRegion given here for reference:";
+		string const expected_an_expression_error_message = "Error: expected an expression.\nRegion given here for reference:";
 
 		shared_ptr<c_scope> global_typedef_scope = nullptr;
 
@@ -448,7 +449,7 @@ namespace __karma {
 				shared_ptr<c_array_size> asize = make_shared<c_array_size>();
 				asize->complete_node = true;
 				asize->error_node = false;
-				shared_ptr<c_expression> expr = parse_expression(parser);
+				shared_ptr<c_expression> expr = parse_expression(parser, c_type_cast_state::TYPE_CAST_STATE_NOT_CAST);
 				asize->expression = expr;
 				asize->source_begin_pos = save1;
 				asize->source_end_pos = parser->pos;
@@ -922,7 +923,7 @@ namespace __karma {
 				tok2 = parser->token_list[parser->pos];
 				if (tok2->get_id() == token::EQUALS) {
 					parser->pos++;
-					expr = parse_constant_expression(parser);
+					expr = parse_constant_expression(parser, c_type_cast_state::TYPE_CAST_STATE_NOT_CAST);
 				}
 				else
 					expr = nullptr;
@@ -1269,7 +1270,7 @@ namespace __karma {
 				shared_ptr<cpp_token> tok = parser->token_list[parser->pos];
 				if (tok->get_id() == token::COLON) {
 					parser->pos++;
-					shared_ptr<c_expression> expr = parse_expression(parser);
+					shared_ptr<c_expression> expr = parse_expression(parser, c_type_cast_state::TYPE_CAST_STATE_NOT_CAST);
 					if (expr == nullptr) {
 						decl_list.clear();
 						p.first = nullptr;
@@ -1303,7 +1304,8 @@ namespace __karma {
 			auto temporary_is_not_expression_start = [&]() -> bool { return tok->get_id() == token::OPEN_BRACE || tok->get_id() == token::CLOSE_BRACE || tok->get_id() == token::FOR ||
 				tok->get_id() == token::WHILE || tok->get_id() == token::IF || tok->get_id() == token::ELSE || tok->get_id() == token::GOTO || parse_declaration_specifier_list(parser, true)[0] != nullptr; };
 			while (true) {
-				if (plev < prec_level || prec_level == c_precedence_level::PRECEDENCE_LEVEL_UNKNOWN)
+				int save1 = parser->pos;
+				if (plev < prec_level)
 					return lhs;
 				shared_ptr<cpp_token> op = parser->token_list[parser->pos];
 				parser->pos++;
@@ -1312,8 +1314,9 @@ namespace __karma {
 					parser_message(parser, tok->get_file_name(), tok->get_line_number(), expected_an_expression_after_a_comma_error_message, c_parser_diagnostic_kind::PARSER_DIAGNOSTIC_KIND_ERROR);
 					return nullptr;
 				}
+				shared_ptr<c_expression> expr = make_shared<c_expression>();
 				if (plev == c_precedence_level::PRECEDENCE_LEVEL_CONDITIONAL) {
-					shared_ptr<c_expression> expr = parse_expression(parser);
+					expr = parse_expression(parser, c_type_cast_state::TYPE_CAST_STATE_NOT_CAST);
 					if (expr == nullptr)
 						return nullptr;
 					shared_ptr<cpp_token> tok2 = parser->token_list[parser->pos];
@@ -1321,16 +1324,137 @@ namespace __karma {
 						parser_message(parser, tok2->get_file_name(), tok2->get_line_number(), expected_colon_for_ternary_expression_error_message, c_parser_diagnostic_kind::PARSER_DIAGNOSTIC_KIND_ERROR);
 						return nullptr;
 					}
+					parser->pos++;
 				}
-				shared_ptr<c_expression> rhs = parse_cast_unary_postfix_primary_expression(parser, false);
+				shared_ptr<c_expression> rhs = parse_cast_unary_postfix_primary_expression(parser, false, c_type_cast_state::TYPE_CAST_STATE_NOT_CAST);
 				if (rhs == nullptr)
 					return nullptr;
-
+				c_precedence_level nplev = plev;
+				plev = get_binary_operator_c_precedence_level(parser->token_list[parser->pos]);
+				bool right_associative = nplev == c_precedence_level::PRECEDENCE_LEVEL_CONDITIONAL || c_precedence_level::PRECEDENCE_LEVEL_ASSIGNMENT;
+				if (nplev < plev || (nplev == plev && right_associative)) {
+					rhs = parse_rhs_binary_expression(parser, rhs, static_cast<c_precedence_level>(nplev + !right_associative));
+					if (rhs == nullptr)
+						return nullptr;
+					plev = get_binary_operator_c_precedence_level(parser->token_list[parser->pos]);
+				}
+				PARSER_ASSERT(plev <= nplev && "this should reduce expression to an AST");
+				if (lhs == nullptr)
+					return nullptr;
+				if (expr != nullptr) {
+					shared_ptr<c_ternary_operation> t_op = make_shared<c_ternary_operation>();
+					t_op->complete_node = true;
+					t_op->error_node = false;
+					t_op->expression_kind = c_expression_kind::EXPRESSION_TERNARY_OPERATION;
+					t_op->false_path = rhs;
+					t_op->source_begin_pos = save1;
+					t_op->source_end_pos = parser->pos;
+					t_op->test = expr;
+					t_op->true_path = rhs;
+					lhs = static_pointer_cast<c_expression>(t_op);
+				}
+				else {
+					shared_ptr<c_binary_operation> bin_op = make_shared<c_binary_operation>();
+					bin_op->binary_operator = op;
+					bin_op->complete_node = true;
+					bin_op->error_node = false;
+					bin_op->expression_kind = c_expression_kind::EXPRESSION_BINARY_OPERATION;
+					bin_op->lhs = lhs;
+					bin_op->rhs = rhs;
+					bin_op->source_begin_pos = save1;
+					bin_op->source_end_pos = parser->pos;
+					lhs = static_pointer_cast<c_binary_operation>(bin_op);
+				}
 			}
 		}
 
-		shared_ptr<c_expression> parse_cast_unary_postfix_primary_expression(shared_ptr<c_parser> parser, bool unary_expression) {
+		shared_ptr<c_expression> parse_assignment_expression(shared_ptr<c_parser> parser, c_type_cast_state type_cast_state) {
+			shared_ptr<c_expression> lhs = parse_cast_unary_postfix_primary_expression(parser, false, type_cast_state);
+			if (lhs == nullptr) return nullptr;
+			return parse_rhs_binary_expression(parser, lhs, c_precedence_level::PRECEDENCE_LEVEL_ASSIGNMENT);
+		}
 
+		shared_ptr<c_expression> parse_expression(shared_ptr<c_parser> parser, c_type_cast_state type_cast_state) {
+			shared_ptr<c_expression> lhs = parse_assignment_expression(parser, type_cast_state);
+			if (lhs == nullptr) return nullptr;
+			return parse_rhs_binary_expression(parser, lhs, c_precedence_level::PRECEDENCE_LEVEL_COMMA);
+		}
+
+		shared_ptr<c_expression> parse_constant_expression(shared_ptr<c_parser> parser, c_type_cast_state type_cast_state) {
+			shared_ptr<c_expression> lhs = parse_cast_unary_postfix_primary_expression(parser, false, type_cast_state);
+			if (lhs == nullptr) return nullptr;
+			return parse_rhs_binary_expression(parser, lhs, c_precedence_level::PRECEDENCE_LEVEL_CONDITIONAL);
+		}
+
+		shared_ptr<c_expression> parse_cast_unary_postfix_primary_expression(shared_ptr<c_parser> parser, bool unary_expression, c_type_cast_state type_cast_state) {
+			bool cast_expression;
+			shared_ptr<c_expression> expr = parse_cast_unary_postfix_primary_expression2(parser, unary_expression, cast_expression, type_cast_state);
+			if (!cast_expression || expr == nullptr) {
+				parser_message(parser, parser->token_list[parser->pos]->get_file_name(), parser->token_list[parser->pos]->get_line_number(), expected_an_expression_error_message, c_parser_diagnostic_kind::PARSER_DIAGNOSTIC_KIND_ERROR);
+				return nullptr;
+			}
+			return expr;
+		}
+
+		shared_ptr<c_expression> parse_cast_unary_postfix_primary_expression2(shared_ptr<c_parser> parser, bool unary_expression, bool& cast_expression, c_type_cast_state type_cast_state) {
+			int save = parser->pos;
+			shared_ptr<c_expression> expr = make_shared<c_expression>();
+			shared_ptr<cpp_token> tok = parser->token_list[parser->pos];
+			cast_expression = true;
+			switch (tok->get_id()) {
+			case token::OPEN_PARENTHESIS: {
+				c_parenthesis_parse_option pparenopt = unary_expression ? c_parenthesis_parse_option::C_PARENTHESIS_PARSE_COMPOUND_LITERAL :
+					c_parenthesis_parse_option::C_PARENTHESIS_PARSE_CAST;
+				expr = parse_parenthesized_expression(parser);
+				switch (pparenopt) {
+				case c_parenthesis_parse_option::C_PARENTHESIS_PARSE_EXPRESSION:
+				case c_parenthesis_parse_option::C_PARENTHESIS_PARSE_COMPOUND_LITERAL:
+					break;
+				case c_parenthesis_parse_option::C_PARENTHESIS_PARSE_CAST:
+					return expr;
+					break;
+				};
+			}
+				break;
+			case token::INTEGER:
+			case token::FLOATING_POINT:
+			case token::QUOTE:
+			case token::WQUOTE:
+			case token::CHARACTER:
+			case token::WCHARACTER: {
+				int save1 = parser->pos;
+				parser->pos++;
+				shared_ptr<c_constant> constant = make_shared<c_constant>();
+				constant->complete_node = true;
+				constant->error_node = false;
+				constant->expression_kind = c_expression_kind::EXPRESSION_CONSTANT;
+				constant->source_begin_pos = save1;
+				constant->source_end_pos = parser->pos;
+				constant->token = tok;
+				if (tok->get_id() == token::INTEGER) constant->constant_kind = c_constant_kind::CONSTANT_INTEGER;
+				else if (tok->get_id() == token::FLOATING_POINT) constant->constant_kind = c_constant_kind::CONSTANT_FLOATING_POINT;
+				else if (tok->get_id() == token::QUOTE) constant->constant_kind = c_constant_kind::CONSTANT_QUOTE;
+				else if (tok->get_id() == token::WQUOTE) constant->constant_kind = c_constant_kind::CONSTANT_WQUOTE;
+				else if (tok->get_id() == token::CHARACTER) constant->constant_kind = c_constant_kind::CONSTANT_WCHARACTER;
+				else if (tok->get_id() == token::CHARACTER) constant->constant_kind = c_constant_kind::CONSTANT_CHARACTER;
+				else PARSER_ASSERT(true && "this should be unreachable");
+				expr = static_pointer_cast<c_constant>(constant);
+			}
+				break;
+			case token::IDENTIFIER: {
+				int save1 = parser->pos;
+				parser->pos++;
+				shared_ptr<c_identifier> ident = make_shared<c_identifier>();
+				ident->complete_node = true;
+				ident->error_node = false;
+				ident->expression_kind = c_expression_kind::EXPRESSION_IDENTIFIER;
+				ident->source_begin_pos = save1;
+				ident->source_end_pos = parser->pos;
+				ident->token = tok;
+				expr = static_pointer_cast<c_expression>(ident);
+			}
+				break;
+			};
 		}
 	}
 }	

@@ -24,6 +24,14 @@ namespace __karma {
 			PARSER_DIAGNOSTIC_KIND_ERROR = 0x0001, PARSER_DIAGNOSTIC_KIND_WARNING = 0x0002, PARSER_DIAGNOSTIC_KIND_NOTE = 0x0004
 		};
 
+		enum c_parenthesis_parse_option {
+			C_PARENTHESIS_PARSE_EXPRESSION = 0x0001, C_PARENTHESIS_PARSE_COMPOUND_LITERAL = 0x0002, C_PARENTHESIS_PARSE_CAST = 0x0004
+		};
+
+		enum c_type_cast_state {
+			TYPE_CAST_STATE_CAST = 0x0001, TYPE_CAST_STATE_MAYBE_CAST = 0x0002, TYPE_CAST_STATE_NOT_CAST = 0x0004
+		};
+
 		c_type_kind determine_declaration_specifier_list_type_kind(vector<shared_ptr<c_declaration_specifier>> declspec_list);
 
 		void semantics_assert(char* message, char* file, int line);
