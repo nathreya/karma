@@ -1454,6 +1454,46 @@ namespace __karma {
 				expr = static_pointer_cast<c_expression>(ident);
 			}
 				break;
+			case token::PLUS:
+			case token::MINUS:
+			case token::CMPL:
+			case token::STAR:
+			case token::NOT:
+			case token::SINGLE_AND:
+			case token::INCREMENT:
+			case token::DECREMENT: {
+				int save1 = parser->pos;
+				parser->pos++;
+				shared_ptr<c_expression> texpr = parse_cast_unary_postfix_primary_expression(parser, unary_expression, c_type_cast_state::TYPE_CAST_STATE_NOT_CAST);
+				if (texpr == nullptr)
+					return nullptr;
+				shared_ptr<c_unary_operation> uexpr = make_shared<c_unary_operation>();
+				uexpr->complete_node = true;
+				uexpr->error_node = false;
+				uexpr->expression = texpr;
+				uexpr->expression_kind = c_expression_kind::EXPRESSION_UNARY_OPERATION;
+				uexpr->source_begin_pos = save1;
+				uexpr->source_end_pos = parser->pos;
+				if (tok->get_id() == token::PLUS)
+					uexpr->unary_operation_kind = c_unary_operation_kind::UNARY_PLUS;
+				else if (tok->get_id() == token::MINUS)
+					uexpr->unary_operation_kind = c_unary_operation_kind::UNARY_MINUS;
+				else if (tok->get_id() == token::CMPL)
+					uexpr->unary_operation_kind = c_unary_operation_kind::UNARY_CMPL;
+				else if (tok->get_id() == token::STAR)
+					uexpr->unary_operation_kind = c_unary_operation_kind::UNARY_INDIRECTION;
+				else if (tok->get_id() == token::SINGLE_AND)
+					uexpr->unary_operation_kind = c_unary_operation_kind::UNARY_ADDRESS;
+				else if (tok->get_id() == token::INCREMENT)
+					uexpr->unary_operation_kind = c_unary_operation_kind::UNARY_INCREMENT;
+				else if (tok->get_id() == token::DECREMENT)
+					uexpr->unary_operation_kind = c_unary_operation_kind::UNARY_DECREMENT;
+				else
+					uexpr->unary_operation_kind = c_unary_operation_kind::UNARY_NOT;
+				expr = static_pointer_cast<c_expression>(uexpr);
+			}
+				return expr;
+				break;
 			};
 		}
 	}
