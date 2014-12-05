@@ -27,6 +27,7 @@ namespace __karma {
 		string const expected_an_expression_after_a_comma_error_message = "Error: expected an expression after a comma.\nRegion given here for reference:";
 		string const expected_colon_for_ternary_expression_error_message = "Error: expected a colon for a ternary expression.\nRegion given here for reference:";
 		string const expected_an_expression_error_message = "Error: expected an expression.\nRegion given here for reference:";
+		string const expected_an_identifier_for_a_structure_error_message = "Error: expected an identifier to refer to.\nRegion given here for reference:";
 
 		shared_ptr<c_scope> global_typedef_scope = nullptr;
 
@@ -1494,7 +1495,94 @@ namespace __karma {
 			}
 				return expr;
 				break;
+			case token::SIZEOF:
+				return parse_unary_expression(parser);
+			default:
+				return nullptr;
 			};
+			return parse_postfix_suffix_expression(parser, expr);
+		}
+
+		shared_ptr<c_expression> parse_postfix_suffix_expression(shared_ptr<c_parser> parser, shared_ptr<c_expression> expr) {
+			while (true) {
+				int save = parser->pos;
+				shared_ptr<cpp_token> tok = parser->token_list[parser->pos];
+				switch (tok->get_id()) {
+				case token::IDENTIFIER:
+				default:
+					return expr;
+				case token::OPEN_BRACKET: {
+					parser->pos++;
+					shared_ptr<c_expression> exp = parse_expression(parser, c_type_cast_state::TYPE_CAST_STATE_NOT_CAST);
+					shared_ptr<cpp_token> tok2 = parser->token_list[parser->pos];
+					if (tok2->get_id() == token::CLOSE_BRACKET) {
+						parser_message(parser, tok2->get_file_name(), tok2->get_line_number(), missing_a_close_bracket_error_message, c_parser_diagnostic_kind::PARSER_DIAGNOSTIC_KIND_ERROR);
+						return nullptr;
+					}
+					shared_ptr<c_array_subscript> asubscr = make_shared<c_array_subscript>();
+					asubscr->array_identifier = expr;
+					asubscr->complete_node = true;
+					asubscr->error_node = false;
+					asubscr->expression_kind = c_expression_kind::EXPRESSION_ARRAY_SUBSCRIPT;
+					asubscr->source_begin_pos = save;
+					asubscr->source_end_pos = parser->pos;
+					asubscr->subscript_expression = exp;
+					expr = static_pointer_cast<c_expression>(asubscr);
+				}
+					break;
+				case token::OPEN_PARENTHESIS: {
+					parser->pos++;
+					vector<shared_ptr<c_expression>> expr_list = parse_expression_list(parser, c_type_cast_state::TYPE_CAST_STATE_NOT_CAST);
+					shared_ptr<cpp_token> tok2 = parser->token_list[parser->pos];
+					if (tok2->get_id() != token::CLOSE_PARENTHESIS)
+						return nullptr;
+					parser->pos++;
+					shared_ptr<c_function_call> func_call = make_shared<c_function_call>();
+					func_call->argument_list = expr_list;
+					func_call->complete_node = true;
+					func_call->error_node = false;
+					func_call->expression_kind = c_expression_kind::EXPRESSION_FUNCTION_CALL;
+					func_call->function_identifier = expr;
+					func_call->source_begin_pos = save;
+					func_call->source_end_pos = parser->pos;
+					expr = static_pointer_cast<c_expression>(func_call);
+				}
+					break;
+				case token::DOT:
+				case token::STRUCTURE_DEREFERENCE: {
+					parser->pos++;
+					int save1 = parser->pos;
+					shared_ptr<cpp_token> tok2 = parser->token_list[parser->pos];
+					if (tok2->get_id() != token::IDENTIFIER) {
+						parser_message(parser, tok2->get_file_name(), tok2->get_line_number(), expected_an_identifier_for_a_structure_error_message, c_parser_diagnostic_kind::PARSER_DIAGNOSTIC_KIND_ERROR);
+						return nullptr;
+					}
+					parser->pos++;
+					shared_ptr<c_identifier> ident = make_shared<c_identifier>();
+					ident->complete_node = true;
+					ident->error_node = false;
+					ident->expression_kind = c_expression_kind::EXPRESSION_IDENTIFIER;
+					ident->source_begin_pos = save1;
+					ident->source_end_pos = parser->pos;
+					ident->token = tok2;
+					shared_ptr<c_expression> exp = static_pointer_cast<c_expression>(ident);
+					shared_ptr<c_member_access> mem_acc = make_shared<c_member_access>();
+					mem_acc->complete_node = true;
+					mem_acc->error_node = false;
+					mem_acc->expression_kind = c_expression_kind::EXPRESSION_MEMBER_ACCESS;
+					mem_acc->identifier_expression = expr;
+					if (tok->get_id() == token::STRUCTURE_DEREFERENCE)
+						mem_acc->member_access_kind = c_member_access_kind::MEMBER_ACCESS_STRUCTURE_DEREFERENCE;
+					else
+						mem_acc->member_access_kind = c_member_access_kind::MEMBER_ACCESS_DOT;
+					mem_acc->member_identifier = exp;
+					mem_acc->source_begin_pos = save;
+					mem_acc->source_end_pos = parser->pos;
+					expr = static_pointer_cast<c_expression>(mem_acc);
+				}
+					break;
+				}
+			}
 		}
 	}
 }	

@@ -45,3 +45,8 @@ Icon
 *.user
 *.exe
 *.ilk
+*.ipch
+*.opensdf
+*.sdf
+*.suo
+*.sln
