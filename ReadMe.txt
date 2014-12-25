@@ -1,10 +1,8 @@
 karma is a set of files that provides tools for C code compilation.
 Currently only supports Visual Studio; however, removing the "stdafx.h" headers makes the code cross platform.
 The debug configuration throws an exception; however, the release does work.
-There may be bugs in the parser; however, considering a wide array of use-cases need to be covered, sometimes, 
-for a specific configuration, it may fail.
-The preprocessor has been heavily tested, and works with most cases except those listed in the preprocess.{h,cpp} files 
-listed.
+There may be bugs in the parser; however, considering a wide array of use-cases need to be covered, sometimes, for a specific configuration, it may fail.
+The preprocessor has been heavily tested, and works with most cases except those listed in the preprocess.{h,cpp} files listed.
 
 IMPORTANT: 
   Please define these functions: (parser will break without it) 
