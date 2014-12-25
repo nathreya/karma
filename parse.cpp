@@ -28,6 +28,7 @@ namespace __karma {
 		string const expected_colon_for_ternary_expression_error_message = "Error: expected a colon for a ternary expression.\nRegion given here for reference:";
 		string const expected_an_expression_error_message = "Error: expected an expression.\nRegion given here for reference:";
 		string const expected_an_identifier_for_a_structure_error_message = "Error: expected an identifier to refer to.\nRegion given here for reference:";
+		string const expected_a_comma_to_separate_expressions_error_message = "Error: expected a comma to separated expression.\nRegion given here for reference:";
 
 		shared_ptr<c_scope> global_typedef_scope = nullptr;
 
@@ -1406,7 +1407,7 @@ namespace __karma {
 			case token::OPEN_PARENTHESIS: {
 				c_parenthesis_parse_option pparenopt = unary_expression ? c_parenthesis_parse_option::C_PARENTHESIS_PARSE_COMPOUND_LITERAL :
 					c_parenthesis_parse_option::C_PARENTHESIS_PARSE_CAST;
-				expr = parse_parenthesized_expression(parser);
+				expr = parse_parenthesized_expression(parser, pparenopt);
 				switch (pparenopt) {
 				case c_parenthesis_parse_option::C_PARENTHESIS_PARSE_EXPRESSION:
 				case c_parenthesis_parse_option::C_PARENTHESIS_PARSE_COMPOUND_LITERAL:
@@ -1495,8 +1496,10 @@ namespace __karma {
 			}
 				return expr;
 				break;
-			case token::SIZEOF:
-				return parse_unary_expression(parser);
+			case token::SIZEOF: {
+				bool cast_expression;
+				return parse_sizeof_expression(parser, cast_expression);
+			}
 			default:
 				return nullptr;
 			};
@@ -1581,8 +1584,128 @@ namespace __karma {
 					expr = static_pointer_cast<c_expression>(mem_acc);
 				}
 					break;
+				case token::INCREMENT:
+				case token::DECREMENT: {
+					int save1 = parser->pos;
+					parser->pos++;
+					shared_ptr<c_postfix_operation> postfix_operation = make_shared<c_postfix_operation>();
+					postfix_operation->complete_node = true;
+					postfix_operation->error_node = false;
+					postfix_operation->expression = expr;
+					postfix_operation->expression_kind = c_expression_kind::EXPRESSION_POSTFIX_OPERATION;
+					if (tok->get_id() == token::INCREMENT)
+						postfix_operation->postfix_operation_kind = c_postfix_operation_kind::POSTFIX_INCREMENT;
+					else
+						postfix_operation->postfix_operation_kind = c_postfix_operation_kind::POSTFIX_DECREMENT;
+					postfix_operation->source_begin_pos = save1;
+					postfix_operation->source_end_pos = parser->pos;
+					expr = static_pointer_cast<c_postfix_operation>(postfix_operation);
+				}
+					break;
 				}
 			}
+			return expr;
+		}
+
+		shared_ptr<c_expression> parse_sizeof_expression(shared_ptr<c_parser> parser, bool& cast_expression) {
+			int save = parser->pos;
+			PARSER_ASSERT(parser->token_list[save]->get_id() == token::SIZEOF && "A sizeof expression should begin with a 'sizeof' token.");
+			parser->pos++;
+			int save1 = parser->pos;
+			shared_ptr<c_expression> expr;
+			if (parser->token_list[save1]->get_id() == token::OPEN_PARENTHESIS) {
+				expr = parse_parenthesized_expression(parser, c_parenthesis_parse_option::C_PARENTHESIS_PARSE_CAST);
+				expr = parse_postfix_suffix_expression(parser, expr);
+			}
+			else {
+				cast_expression = false;
+				expr = parse_cast_unary_postfix_primary_expression(parser, true, c_type_cast_state::TYPE_CAST_STATE_NOT_CAST);
+			}
+			cast_expression = false;
+			return expr;
+		}
+
+		vector<shared_ptr<c_expression>> parse_expression_list(shared_ptr<c_parser> parser, c_type_cast_state type_cast_state) {
+			vector<shared_ptr<c_expression>> expr_list;
+			while (true) {
+				shared_ptr<c_expression> expr = parse_assignment_expression(parser, c_type_cast_state::TYPE_CAST_STATE_NOT_CAST);
+				if (expr == nullptr) {
+					parser_message(parser, parser->token_list[parser->pos]->get_file_name(), parser->token_list[parser->pos]->get_line_number(), expected_an_expression_error_message, c_parser_diagnostic_kind::PARSER_DIAGNOSTIC_KIND_ERROR);
+					expr_list.clear();
+					expr_list.push_back(nullptr);
+					return expr_list;
+				}
+				expr_list.push_back(expr);
+				shared_ptr<cpp_token> tok = parser->token_list[parser->pos];
+				if (tok->get_id() != token::COMMA) {
+					parser_message(parser, parser->token_list[parser->pos]->get_file_name(), parser->token_list[parser->pos]->get_line_number(), expected_a_comma_to_separate_expressions_error_message, c_parser_diagnostic_kind::PARSER_DIAGNOSTIC_KIND_ERROR);
+					expr_list.clear();
+					expr_list.push_back(nullptr);
+					return expr_list;
+				}
+				parser->pos++;
+			}
+			return expr_list;
+		}
+
+		shared_ptr<c_expression> parse_parenthesized_expression(shared_ptr<c_parser> parser, c_parenthesis_parse_option parenthesis_parse_option) {
+			PARSER_ASSERT(parser->token_list[parser->pos]->get_id() != token::OPEN_PARENTHESIS && "Expected a '(' to begin an open parenthesis.");
+			int save = parser->pos;
+			parser->pos++;
+			shared_ptr<c_expression> expr = make_shared<c_expression>();
+			if (parenthesis_parse_option >= c_parenthesis_parse_option::C_PARENTHESIS_PARSE_COMPOUND_LITERAL) {
+				shared_ptr<c_type_name> type = parse_type_name(parser);
+				shared_ptr<cpp_token> tok = parser->token_list[parser->pos];
+				if (tok->get_id() != token::CLOSE_PARENTHESIS) {
+					parser_message(parser, tok->get_file_name(), tok->get_line_number(), missing_a_close_parenthesis_error_message, c_parser_diagnostic_kind::PARSER_DIAGNOSTIC_KIND_ERROR);
+					return nullptr;
+				}
+				shared_ptr<cpp_token> tok2 = parser->token_list[parser->pos];
+				if (tok2->get_id() == token::OPEN_BRACE) {
+					parenthesis_parse_option = c_parenthesis_parse_option::C_PARENTHESIS_PARSE_COMPOUND_LITERAL;
+					return parse_compound_literal(parser);
+				}
+				if (parenthesis_parse_option == c_parenthesis_parse_option::C_PARENTHESIS_PARSE_CAST) {
+					expr = parse_cast_unary_postfix_primary_expression(parser, false, c_type_cast_state::TYPE_CAST_STATE_NOT_CAST);
+					if (expr == nullptr) {
+						return nullptr;
+					}
+					return expr;
+				}
+				return nullptr;
+			}
+			else {
+				expr = parse_expression(parser, c_type_cast_state::TYPE_CAST_STATE_NOT_CAST);
+				parenthesis_parse_option = c_parenthesis_parse_option::C_PARENTHESIS_PARSE_EXPRESSION;
+				if (expr == nullptr)
+					return nullptr;
+			}
+			shared_ptr<cpp_token> tok = parser->token_list[parser->pos];
+			if (tok->get_id() != token::CLOSE_PARENTHESIS) {
+				parser_message(parser, tok->get_file_name(), tok->get_line_number(), missing_a_close_parenthesis_error_message, c_parser_diagnostic_kind::PARSER_DIAGNOSTIC_KIND_ERROR);
+				return nullptr;
+			}
+			return expr;
+		}
+
+		shared_ptr<c_type_name> parse_type_name(shared_ptr<c_parser> parser) {
+			//user-defined for flexibility
+			return nullptr;
+		}
+
+		shared_ptr<c_expression> parse_compound_literal(shared_ptr<c_parser> parser) {
+			//user-defined for flexibility
+			return nullptr;
+		}
+
+		shared_ptr<c_statement> parse_compound_statement(shared_ptr<c_parser> parser) {
+			//user-defined for flexibility
+			return nullptr;
+		}
+
+		shared_ptr<c_expression> parse_initializer(shared_ptr<c_parser> parser) {
+			//user-defined for flexibility
+			return nullptr;
 		}
 	}
 }	

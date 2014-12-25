@@ -49,8 +49,8 @@ namespace __karma {
 		extern string const expected_a_comma_to_separate_struct_declarators_error_message;
 		extern string const expected_an_expression_after_a_comma_error_message;
 		extern string const expected_colon_for_ternary_expression_error_message;
-		extern string const expected_an_identifier_for_a_structure_error_message = "Error: expected an identifier to refer to.\nRegion given here for reference:";
-
+		extern string const expected_an_identifier_for_a_structure_error_message;
+		
 		extern shared_ptr<c_scope> global_typedef_scope;
 
 		void parser_assert(char* message, char* file, int line);
@@ -88,10 +88,12 @@ namespace __karma {
 		shared_ptr<c_expression> parse_cast_unary_postfix_primary_expression(shared_ptr<c_parser> parser, bool unary_expression, c_type_cast_state type_cast_state);
 		shared_ptr<c_expression> parse_assignment_expression(shared_ptr<c_parser> parser, c_type_cast_state type_cast_state);
 		shared_ptr<c_expression> parse_cast_unary_postfix_primary_expression2(shared_ptr<c_parser> parser, bool unary_expression, bool& cast_expression, c_type_cast_state type_cast_state);
-		shared_ptr<c_expression> parse_parenthesized_expression(shared_ptr<c_parser> parser);
-		shared_ptr<c_expression> parse_unary_expression(shared_ptr<c_parser> parser);
+		shared_ptr<c_expression> parse_parenthesized_expression(shared_ptr<c_parser> parser, c_parenthesis_parse_option parenthesis_parse_option);
+		shared_ptr<c_expression> parse_sizeof_expression(shared_ptr<c_parser> parser, bool& cast_expression);
 		shared_ptr<c_expression> parse_postfix_suffix_expression(shared_ptr<c_parser> parser, shared_ptr<c_expression> expr);
 		vector<shared_ptr<c_expression>> parse_expression_list(shared_ptr<c_parser> parser, c_type_cast_state type_cast_state);
+		shared_ptr<c_type_name> parse_type_name(shared_ptr<c_parser> parser);
+		shared_ptr<c_expression> parse_compound_literal(shared_ptr<c_parser> parser);
 	}
 }
 

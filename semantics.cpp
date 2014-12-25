@@ -118,5 +118,11 @@ namespace __karma {
 			}
 			SEMANTICS_ASSERT(true && "this should be unreachable");
 		}
+
+		c_type_kind determine_declaration_specifier_list_type_kind(vector<shared_ptr<c_declaration_specifier>> declspec_list) {
+			//user-defined to add custom types
+			//	edit c_ast.h to add more types
+			return c_type_kind::TYPE_KIND_VOID; //dummy return
+		}
 	}
 }
