@@ -10,6 +10,8 @@ using namespace __karma::__preprocess;
 using namespace __karma::__parse;
 
 int main() {
+
+	//This is the string that needs to be modified in order for the preprocessing to work with some code.
 	string ex = "";
 	vector<cpp_token> vcpp = preprocess(ex, "FILE");
 	for(int i = 0; i < vcpp.size(); i++)

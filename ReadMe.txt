@@ -13,3 +13,6 @@ shared_ptr<c_statement> parse_compound_statement(shared_ptr<c_parser> parser);
 shared_ptr<c_expression> parse_initializer(shared_ptr<c_parser> parser); 
 c_type_kind determine_declaration_specifier_list_type_kind(vector<shared_ptr<c_declaration_specifier>> declspec_list); 
 vector<shared_ptr<c_expression>> query_identifier(shared_ptr<c_c_declaration> decl); 
+
+In order to run this program's preprocessor, just compile the program in Visual Studio.
+By changing the string in the main source file, the source code will be preprocessed, any errors will be emitted, and the individual tokens will be shown.
